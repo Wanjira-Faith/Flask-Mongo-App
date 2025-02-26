@@ -23,7 +23,7 @@ reset_model = ResetModel(mongo)
 
 @app.route('/')
 def index():
-    return redirect(url_for('login'))
+    return redirect(url_for('register'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -61,10 +61,11 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """Logs out the user."""
-    session.pop('user_id', None)
-    flash("Logged out successfully", "success")
-    return redirect(url_for('login'))
+    """Logs out the user and clears the session."""
+    session.clear()  # Clears all session data
+    flash("Logged out successfully", "success")  # Flash logout message
+    return redirect(url_for('login'))  # Redirects to login page
+
 
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -105,12 +106,27 @@ def send_reset_email(email, token):
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
-    """Allows users to enter contact details."""
+    """Allows users to enter and view contact details."""
     if 'user_id' not in session:
+        flash("You must log in first.", "error")
         return redirect(url_for('login'))
 
+    user_id = session['user_id']
+    
+    # Fetch user details from database
+    user = user_model.find_user_by_id(user_id)
+    
+    if not user:
+        flash("User not found!", "error")
+        return redirect(url_for('login'))
+
+    # Ensure we handle cases where 'registration_number' might be missing
+    registration_number = user.get("registration_number", "")
+
+    # Fetch user contact details
+    contact = contact_model.find_by_registration(registration_number) if registration_number else None
+
     if request.method == 'POST':
-        user_id = session['user_id']
         phone = request.form['phone']
         email = request.form['email']
         address = request.form['address']
@@ -118,12 +134,26 @@ def profile():
 
         contact_model.create_contact(user_id, phone, email, address, registration_number)
         flash("Profile updated successfully", "success")
+        return redirect(url_for('profile'))  # Reload the page with new data
 
-    return render_template('profile.html')
+    return render_template('profile.html', user=user, contact=contact)
 
-@app.route('/search', methods=['GET'])
+
+@app.route('/search', methods=['GET', 'POST'])
 def search():
     """Searches for contact by registration number."""
-    reg_no = request.args.get('registration_number')
-    contact = contact_model.find_by_registration(reg_no)
-    return render_template('search_results.html', contact=contact)
+    if request.method == 'POST':
+        reg_no = request.form.get('registration_number', '').strip()
+
+        if not reg_no:
+            flash("Please enter a registration number", "error")
+            return redirect(url_for('search'))
+
+        contact = contact_model.find_by_registration(reg_no)
+
+        if not contact:
+            flash("No contact found for the given registration number.", "error")
+
+        return render_template('search_results.html', contact=contact)
+
+    return render_template('search.html')

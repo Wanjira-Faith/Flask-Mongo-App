@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Search Results</h2>
+
+        {% if contact %}
+        <div class="contact-card">
+            <p><strong>Name:</strong> {{ contact.name }}</p>
+            <p><strong>Email:</strong> {{ contact.email }}</p>
+            <p><strong>Phone:</strong> {{ contact.phone }}</p>
+        </div>
+        {% else %}
+        <div class="no-results">
+            <p>No contact found for the given registration number.</p>
+        </div>
+        {% endif %}
+
+        <div class="buttons">
+            <a href="/search" class="btn">🔍 Search Again</a>
+            <a href="/profile" class="btn">👤 Back to Profile</a>
+            <a href="/" class="btn">🏠 Home</a>
+        </div>
+    </div>
+</body>
+
+</html>

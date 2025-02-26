@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+        {% for message in messages %}
+        {% if message[1] is defined %}
+        <div class="alert alert-{{ message[0] }}">{{ message[1] }}</div>
+        {% else %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="/register" method="post">
+            <h2>Create an Account</h2>
+
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Register</button>
+            <p>Already have an account? <a href="/login">Login</a></p>
+        </form>
+    </div>
+</body>
+
+</html>

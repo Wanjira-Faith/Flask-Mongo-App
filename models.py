@@ -1,4 +1,5 @@
 from flask_pymongo import PyMongo
+from bson.objectid import ObjectId  # Import to handle MongoDB ObjectId
 
 class UserModel:
     """Handles user authentication and profile data."""
@@ -13,11 +14,18 @@ class UserModel:
             "password": password_hash,
             "email": email
         }
-        return self.users.insert_one(user)
+        return self.users.insert_one(user).inserted_id  # Return inserted user's ID
 
     def find_user_by_username(self, username):
         """Finds a user by username."""
         return self.users.find_one({"username": username})
+
+    def find_user_by_id(self, user_id):
+        """Finds a user by their unique ID (ObjectId)."""
+        try:
+            return self.users.find_one({"_id": ObjectId(user_id)})
+        except:
+            return None  # 🔥 FIX: Handle invalid ObjectId cases safely
 
 
 class ContactModel:
@@ -27,7 +35,7 @@ class ContactModel:
         self.contacts = mongo.db.contacts
 
     def create_contact(self, user_id, phone, email, address, registration_number):
-        """Stores user contact details."""
+        """Stores or updates user contact details."""
         contact = {
             "user_id": user_id,
             "phone": phone,
@@ -35,11 +43,16 @@ class ContactModel:
             "address": address,
             "registration_number": registration_number
         }
-        return self.contacts.insert_one(contact)
+        # 🔥 FIX: Update if exists, otherwise insert a new one
+        return self.contacts.update_one({"user_id": user_id}, {"$set": contact}, upsert=True)
 
     def find_by_registration(self, registration_number):
         """Finds a contact by registration number."""
         return self.contacts.find_one({"registration_number": registration_number})
+
+    def find_by_user_id(self, user_id):
+        """Finds a contact by user ID."""
+        return self.contacts.find_one({"user_id": user_id})
 
 
 class ResetModel:
@@ -55,4 +68,9 @@ class ResetModel:
             "reset_token": reset_token,
             "expires_at": expires_at
         }
-        return self.resets.insert_one(reset_entry)
+        return self.resets.insert_one(reset_entry).inserted_id  # Return inserted token ID
+
+    def find_reset_token(self, reset_token):
+        """Finds a reset token entry."""
+        return self.resets.find_one({"reset_token": reset_token})
+
