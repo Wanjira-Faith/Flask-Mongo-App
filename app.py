@@ -36,9 +36,14 @@ def register():
         if user_model.find_user_by_username(username):
             flash("Username already exists", "error")
         else:
-            user_model.create_user(username, password, email)
-            flash("Registration successful. Please log in.", "success")
-            return redirect(url_for('login'))
+            user_id = user_model.create_user(username, password, email)  # Get the user ID
+            if user_id:  # Check if user creation was successful
+                # Create a contact entry
+                contact_model.create_contact(user_id, phone="", email=email, address="", registration_number="") # Add other fields
+                flash("Registration successful. Please log in.", "success") # Correct: With category
+                return redirect(url_for('login'))
+            else:
+                flash("Registration failed.", "error") # Handle user creation failure
     
     return render_template('register.html')
 
@@ -53,6 +58,8 @@ def login():
 
         if user and check_password_hash(user['password'], password):
             session['user_id'] = str(user['_id'])
+            flash("Logged in successfully!", "success")  # Add success flash message
+            print("Redirecting to login")  # Debugging line
             return redirect(url_for('profile'))
         flash('Invalid credentials', 'error')
 
@@ -62,11 +69,9 @@ def login():
 @app.route('/logout')
 def logout():
     """Logs out the user and clears the session."""
-    session.clear()  # Clears all session data
-    flash("Logged out successfully", "success")  # Flash logout message
-    return redirect(url_for('login'))  # Redirects to login page
-
-
+    session.clear()
+    flash("Logged out successfully", "success")
+    return redirect(url_for('login'))
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
@@ -112,19 +117,11 @@ def profile():
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    
-    # Fetch user details from database
     user = user_model.find_user_by_id(user_id)
     
     if not user:
         flash("User not found!", "error")
         return redirect(url_for('login'))
-
-    # Ensure we handle cases where 'registration_number' might be missing
-    registration_number = user.get("registration_number", "")
-
-    # Fetch user contact details
-    contact = contact_model.find_by_registration(registration_number) if registration_number else None
 
     if request.method == 'POST':
         phone = request.form['phone']
@@ -133,11 +130,16 @@ def profile():
         registration_number = request.form['registration_number']
 
         contact_model.create_contact(user_id, phone, email, address, registration_number)
-        flash("Profile updated successfully", "success")
-        return redirect(url_for('profile'))  # Reload the page with new data
+        flash("Profile updated successfully!", "success")
 
+        # Re-fetch the contact data after update
+        contact = contact_model.find_by_registration(registration_number)
+        return render_template('profile.html', user=user, contact=contact)
+
+    # Initial GET request: Fetch contact data
+    registration_number = user.get("registration_number", "")
+    contact = contact_model.find_by_registration(registration_number) if registration_number else None
     return render_template('profile.html', user=user, contact=contact)
-
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():

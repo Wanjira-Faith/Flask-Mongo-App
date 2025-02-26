@@ -9,21 +9,43 @@
 </head>
 
 <body>
+
+    {% if session['user_id'] %}
+    <!-- Navbar (Only visible if the user is logged in) -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="/profile" class="logo">MyApp</a>
+        </div>
+        <div class="nav-center">
+            <form action="/search" method="GET" class="search-form">
+                <input type="text" name="registration_number" placeholder="Search by Registration No." required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-right">
+            <a href="/profile">Profile</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+    {% endif %}
+
     <div class="container">
         <h2>Welcome, {{ user.username }}!</h2>
 
-
         <!-- Flash Messages Handling -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for msg in messages %}
-    {% if msg is iterable and msg|length == 2 %}
-    {% else %}
-    {% endif %}
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
-
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+        {% for item in messages %}
+        {% if item|length == 2 %}
+        {% set category = item[0] %}
+        {% set msg = item[1] %}
+        <div class="alert alert-{{ category }}">{{ msg }}</div>
+        {% else %}
+        {% set msg = item[0] %}
+        <div class="alert alert-info">{{ msg }}</div> {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
         <form action="/profile" method="post">
             <label for="phone">Phone:</label>
@@ -41,8 +63,6 @@
 
             <button type="submit">Update Profile</button>
         </form>
-
-        <p><a href="/logout">Logout</a></p>
     </div>
 </body>
 
